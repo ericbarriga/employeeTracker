@@ -70,7 +70,7 @@ async function viewRoles() {
 ////////// get employeee info  
 
 // add employee 
-const addEmployee = () => {
+async function addEmployee() {
     inquirer.prompt([
         {
             name: 'first',
@@ -98,6 +98,7 @@ const addEmployee = () => {
                 if (error) throw Error
             })
         })
+        .then(askQuestion())
 }
 
 const addDepartment = () => {
@@ -119,18 +120,34 @@ const addDepartment = () => {
         })
 }
 
+const getDepartment = () => {
+    const sql = `SELECT * FROM depatments`
+    connection.query(sql, (error, response) => {
+        if (error) throw Error
+        let departmentsArray = []
+        response.forEach((departments) => { departmentsArray.push(departments.name) })
+
+        console.log(departmentsArray);
+    })
+}
+
 const addRole = () => {
     inquirer.prompt([
         {
             name: 'role',
-            type: 'list',
-            message: 'what role would you like to add ',
-            choices: ['manager', 'engineer', 'intern']
+            type: 'input',
+            message: 'add name of new role ',
+
         },
         {
             name: 'salary',
             type: 'input',
             message: 'what is the salary for this role'
+        },
+        {
+            name: 'department',
+            type: 'list',
+            choices: ''
         }
     ])
         .then((answers) => {
@@ -143,15 +160,25 @@ const addRole = () => {
 }
 
 const upDateERole = () => {
-    const sql = `SELECT * FROM departments`
+    const sql = `SELECT * FROM roles`
     connection.query(sql, (error, response) => {
         if (error) throw Error
-        let departmentArray = []
-        response.forEach((departments) => { departmentArray.push(departments.name) })
+        let rolesArray = []
+        response.forEach((roles) => { rolesArray.push(roles) })
+        console.log(rolesArray);
 
-        console.log(departmentArray);
+        inquirer.prompt([
+            {
+                name: 'role',
+                type: 'list',
+                message: 'what role would like to add ',
+                choices: rolesArray.id
+            }
+        ])
     })
 }
+
+
 
 
 
@@ -171,6 +198,7 @@ function askQuestion() {
             // call view roles function
         } else if (answers.options === 'add employees') {
             addEmployee()
+
             // call add employees
         } else if (answers.options === 'add departments') {
             addDepartment()
