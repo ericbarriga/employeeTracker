@@ -125,7 +125,7 @@ const addRole = () => {
             name: 'role',
             type: 'list',
             message: 'what role would you like to add ',
-            choices: ['manager', 'engineer',]
+            choices: ['manager', 'engineer', 'intern']
         },
         {
             name: 'salary',
@@ -143,7 +143,14 @@ const addRole = () => {
 }
 
 const upDateERole = () => {
+    const sql = `SELECT * FROM departments`
+    connection.query(sql, (error, response) => {
+        if (error) throw Error
+        let departmentArray = []
+        response.forEach((departments) => { departmentArray.push(departments.name) })
 
+        console.log(departmentArray);
+    })
 }
 
 
@@ -172,7 +179,11 @@ function askQuestion() {
             addRole()
             // call add role
         } else {
+            upDateERole()
             // call up date employee role 
         }
     })
 }
+
+
+
