@@ -71,6 +71,18 @@ async function viewRoles() {
 
 // add employee 
 async function addEmployee() {
+    const roleResponse = await connection.promise().query(`SELECT * FROM roles`)
+    const roles = roleResponse[0].map((rol) => {
+        return `${rol.id}-${rol.title}`
+    })
+    // 
+    const manResponse = await connection.promise().query(`SELECT * FROM employee WHERE manager_id is NULL`)
+    // console.log(manResponse);
+    const manager = manResponse[0].map((man) => {
+        return `${man.id}-${man.first_name} ${man.last_name}`
+    })
+    manager.push('this employee is a manager')
+
     inquirer.prompt([
         {
             name: 'first',
@@ -85,23 +97,30 @@ async function addEmployee() {
 
         },
         {
-            name: 'id',
-            type: 'input',
-            message: 'if manager enter id if not enter 0',
+            name: 'manager',
+            type: 'list',
+            message: 'choose your manager',
+            choices: manager
 
         },
+        {
+            name: 'role',
+            type: 'list',
+            message: 'what is the role of the employee',
+            choices: roles,
+        },
     ])
-        .then((answers) => {
-            console.log('employee added successfully');
-            let sql = `INSERT INTO employee (first_name,last_name,manager_id) VALUES(?,?,?);`
-            connection.promise().query(sql, [answers.first, answers.last, answers.id,], (error, response) => {
-                if (error) throw Error
-            })
+        .then(async (answers) => {
+            console.log(answers.manager);
+            const manager_id = answers.manager === 'this employee is a manager' ? null : Number(answers.manager[0])
+            let sql = `INSERT INTO employee (first_name,last_name,manager_id,role_id) VALUES(?,?,?,?);`
+            await connection.promise().query(sql, [answers.first, answers.last, manager_id, Number(answers.role[0])])
+            askQuestion()
         })
-        .then(askQuestion())
+
 }
 
-const addDepartment = () => {
+async function addDepartment() {
     inquirer.prompt([
         {
             name: 'department',
@@ -111,12 +130,11 @@ const addDepartment = () => {
         },
 
     ])
-        .then((answers) => {
+        .then(async (answers) => {
             console.log(answers);
             let sql = `INSERT INTO departments (name) VALUES(?);`
-            connection.promise().query(sql, answers.department, (error, response) => {
-                if (error) throw Error
-            })
+            await connection.promise().query(sql, answers.department)
+            askQuestion()
         })
 }
 
@@ -131,7 +149,13 @@ const getDepartment = () => {
     })
 }
 
-const addRole = () => {
+const addRole = async () => {
+    const response = await connection.promise().query(`SELECT * FROM departments`)
+    // make a array of department choices to use in the prompt ;;
+    const department = response[0].map((dep) => {
+        return `${dep.id} - ${dep.name}`
+    })
+    // console.log(department);
     inquirer.prompt([
         {
             name: 'role',
@@ -147,35 +171,56 @@ const addRole = () => {
         {
             name: 'department',
             type: 'list',
-            choices: ''
+            choices: department,
+            message: 'what department is the role in '
         }
     ])
-        .then((answers) => {
-            let sql = `INSERT INTO roles (title,salary) VALUES(?,?);`
-            connection.promise().query(sql, [answers.role, answers.salary], (error, response) => {
-                if (error) throw Error
-            })
-
+        .then(async (answers) => {
+            // console.log(Number(answers.department[0]));
+            let sql = `INSERT INTO roles (title,salary,department_id) VALUES(?,?,?);`
+            await connection.promise().query(sql, [answers.role, answers.salary, Number(answers.department[0])],)
+            askQuestion()
         })
 }
 
-const upDateERole = () => {
-    const sql = `SELECT * FROM roles`
-    connection.query(sql, (error, response) => {
-        if (error) throw Error
-        let rolesArray = []
-        response.forEach((roles) => { rolesArray.push(roles) })
-        console.log(rolesArray);
-
-        inquirer.prompt([
-            {
-                name: 'role',
-                type: 'list',
-                message: 'what role would like to add ',
-                choices: rolesArray.id
-            }
-        ])
+const upDateERole = async () => {
+    const roleResponse = await connection.promise().query(`SELECT * FROM roles`)
+    const roles = roleResponse[0].map((rol) => {
+        return `${rol.id}-${rol.title}`
     })
+
+    //
+    const empResponse = await connection.promise().query(`SELECT * FROM employee `)
+    // console.log(manResponse);
+    const employee = empResponse[0].map((emp) => {
+        return `${emp.id}-${emp.first_name} ${emp.last_name}`
+    })
+
+
+    inquirer.prompt([
+        {
+            name: 'employee',
+            type: 'list',
+            message: 'what employee would you like to update ',
+            choices: employee
+        },
+        {
+            name: 'role',
+            type: 'list',
+            message: 'what is there new role  ',
+            choices: roles,
+        },
+
+    ])
+
+        .then(async (answers) => {
+            const roleId = Number(answers.role[0])
+            const empId = Number(answers.employee[0])
+            console.log(answers);
+            let sql = `UPDATE employee SET role_id = ${roleId} WHERE id= ${empId}`;
+            await connection.promise().query(sql)
+            askQuestion()
+        })
 }
 
 
